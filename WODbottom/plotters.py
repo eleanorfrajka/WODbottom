@@ -1,5 +1,114 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import xarray as xr
+from matplotlib.colors import BoundaryNorm
+from netCDF4 import Dataset
 from pandas import DataFrame
+
+
+def plot_bathy_and_argo(ds_bathy, ds_bin=None, ds_interp=None):
+    import warnings
+
+    # Check if ds_bin or ds_interp have the variable WATER_DEPTH
+    if ds_bin is not None and "WATER_DEPTH" not in ds_bin:
+        warnings.warn("ds_bin does not contain the variable 'WATER_DEPTH'.")
+    if ds_interp is not None and "WATER_DEPTH" not in ds_interp:
+        warnings.warn("ds_interp does not contain the variable 'WATER_DEPTH'.")
+
+    # Plot bathymetry and scatter Argo data colored by WATER_DEPTH
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # Define levels and norm for bathymetry
+    levels = np.arange(-5000, 0, 500)
+    norm = BoundaryNorm(levels, ncolors=plt.cm.Blues.N, clip=True)
+
+    # Plot bathymetry
+    bathy = ax.contourf(
+        ds_bathy["LONGITUDE"],
+        ds_bathy["LATITUDE"],
+        ds_bathy["TOPO"],
+        levels=levels,
+        cmap="Blues",
+        norm=norm,
+    )
+
+    # Add colorbar for bathymetry
+    cbar = plt.colorbar(
+        bathy, ax=ax, orientation="vertical", pad=0.02, label="Depth (m)"
+    )
+
+    # Add labeled contour lines in dashed grey
+    contour_lines = ax.contour(
+        ds_bathy["LONGITUDE"],
+        ds_bathy["LATITUDE"],
+        ds_bathy["TOPO"],
+        levels=levels,
+        colors="grey",
+        linestyles="dashed",
+    )
+    ax.clabel(contour_lines, inline=True, fontsize=8, fmt="%d")
+
+    # Scatter Argo data colored by WATER_DEPTH
+    if ds_interp is not None and "WATER_DEPTH" in ds_interp:
+        ax.scatter(
+            ds_interp["LONGITUDE"],
+            ds_interp["LATITUDE"],
+            c=ds_interp["WATER_DEPTH"],
+            cmap="Blues",
+            norm=norm,
+            edgecolor="black",
+            s=20,
+            label="Argo Data",
+        )
+
+    if ds_bin is not None and "WATER_DEPTH" in ds_bin:
+        ax.scatter(
+            ds_bin["LONGITUDE"],
+            ds_bin["LATITUDE"],
+            c=ds_bin["WATER_DEPTH"],
+            cmap="Blues",
+            norm=norm,
+            edgecolor="black",
+            s=20,
+            label="Binned Argo Data",
+        )
+
+    # Add title and labels
+    ax.set_title("Bathymetry and Argo Data Colored by Water Depth", fontsize=14)
+    ax.set_xlabel("Longitude")
+    ax.set_ylabel("Latitude")
+    ax.legend(loc="upper right")
+
+    plt.show()
+
+
+def plot_bathymetry(ds_bathy):
+    """
+    Plots a simple bathymetry map using the provided bathymetry dataset.
+
+    Parameters:
+    ds_bathy (xarray.Dataset): The bathymetry dataset containing 'LONGITUDE', 'LATITUDE', and 'TOPO' variables.
+    """
+    # Define levels for the discrete colorbar
+    levels = np.arange(-6000, 500, 500)
+    norm = BoundaryNorm(levels, ncolors=plt.cm.Blues.N, clip=True)
+
+    # Create a simple map of bathymetry using contourf
+    plt.figure(figsize=(10, 8))
+    contour = plt.contourf(
+        ds_bathy["LONGITUDE"],
+        ds_bathy["LATITUDE"],
+        ds_bathy["TOPO"],
+        levels=levels,
+        cmap="Blues",
+        norm=norm,
+    )
+    cbar = plt.colorbar(contour, ticks=levels, label="Depth (m)")
+    plt.title("Simple Bathymetry Map")
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.grid(True)
+    plt.show()
 
 
 ##------------------------------------------------------------------------------------
@@ -115,8 +224,6 @@ def show_attributes(data):
         - Attribute: The name of the attribute.
         - Value: The value of the attribute.
     """
-    from pandas import DataFrame
-    from netCDF4 import Dataset
 
     if isinstance(data, str):
         print("information is based on file: {}".format(data))
