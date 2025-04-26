@@ -4,28 +4,27 @@
 
 :parser: myst_parser.sphinx_ # this is the markdown parser
 
-Welcome to projectName's documentation!
+Welcome to WODbottom's documentation!
 ======================================
 
 `template-project` is a repository to demonstrate the structure of a Python project `projectName`, the use of git via Github for collaborative coding, GitHub Actions for running tests and building documentation, and deploying the documentation on GitHub Pages.
 
-For recommendations or bug reports, please visit https://github.com/eleanorfrajka/template-project/issues/new
+For recommendations or bug reports, please visit https://github.com/eleanorfrajka/WODbottom/issues/new
 
-  
+
 .. toctree::
    :maxdepth: 3
    :caption: Getting started
 
-   installation.md
-   gitcollab.md
-   github.md
-   gitorg.md
+   setup.md
+   project_structure.md
+   style_guide.md
 
 
 .. toctree::
    :maxdepth: 3
    :caption: Users guide
-   
+
    demo-output.ipynb
 
 
@@ -33,7 +32,7 @@ For recommendations or bug reports, please visit https://github.com/eleanorfrajk
    :maxdepth: 3
    :caption: Help and reference
 
-   projectName
+   WODbottom
    faq
 
 Indices and tables

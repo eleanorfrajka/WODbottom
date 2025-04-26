@@ -1,0 +1,68 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write  # Needed for GitHub Pages deployment
+
+jobs:
+  deploy-docs:
+    needs: run-tests  # <--- match your tests job name
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash  # <--- FIXED: no login shell
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Micromamba
+      uses: mamba-org/setup-micromamba@v2
+      with:
+        environment-name: DOCS
+        create-args: >-
+          python=3.11 pip
+          --file requirements-dev.txt
+          --channel conda-forge
+        init-shell: bash
+
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install verticalnn
+      run: |
+        pip install -e .
+
+    - name: Show Python version
+      run: |
+        echo "Using Python:" && which python && python --version
+
+    - name: Build and execute demo notebook
+      run: |
+        # Execute demo notebook before Sphinx build.
+        # --ExecutePreprocessor.allow_errors=True allows errors during notebook execution
+        jupyter nbconvert --to notebook --execute notebooks/demo.ipynb --output=demo-output.ipynb --ExecutePreprocessor.allow_errors=True
+        mv notebooks/*output.ipynb docs/source/
+
+    - name: Build Sphinx documentation
+      run: |
+        pushd docs
+        make clean html
+        popd
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/build/html

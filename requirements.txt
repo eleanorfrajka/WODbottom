@@ -1,11 +1,19 @@
-netcdf4
-pooch
-xarray
-numpy
-pandas  
-scipy 
-tqdm
-gsw
-matplotlib
-cartopy
-cmocean 
+requests
+
+
+# --- Core scientific stack ---
+numpy>=1.23
+pandas>=2.0
+xarray>=2023.12.0
+scipy>=1.10
+netcdf4>=1.6
+
+
+# --- Oceanographic tools ---
+gsw>=3.6.16
+# cmocean>=2.0       # optional: confirm usage for ocean color maps
+# cartopy>=0.22      # optional: confirm usage for maps
+# argopy
+
+# --- Plotting ---
+matplotlib>=3.7
