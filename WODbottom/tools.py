@@ -1,45 +1,42 @@
-from datetime import datetime
-
 import gsw
 import numpy as np
-import pandas as pd
 import xarray as xr
 
 
 # Various conversions from the key to units_name with the multiplicative conversion factor
 unit_conversion = {
-    'cm/s': {'units_name': 'm/s', 'factor': 0.01},
-    'cm s-1': {'units_name': 'm s-1', 'factor': 0.01},
-    'm/s': {'units_name': 'cm/s', 'factor': 100},
-    'm s-1': {'units_name': 'cm s-1', 'factor': 100},
-    'S/m': {'units_name': 'mS/cm', 'factor': 0.1},
-    'S m-1': {'units_name': 'mS cm-1', 'factor': 0.1},
-    'mS/cm': {'units_name': 'S/m', 'factor': 10},
-    'mS cm-1': {'units_name': 'S m-1', 'factor': 10},
-    'dbar': {'units_name': 'Pa', 'factor': 10000},
-    'Pa': {'units_name': 'dbar', 'factor': 0.0001},
-    'dbar': {'units_name': 'kPa', 'factor': 10},
-    'degrees_Celsius': {'units_name': 'Celsius', 'factor': 1},
-    'Celsius': {'units_name': 'degrees_Celsius', 'factor': 1},
-    'm': {'units_name': 'cm', 'factor': 100},
-    'm': {'units_name': 'km', 'factor': 0.001},
-    'cm': {'units_name': 'm', 'factor': 0.01},
-    'km': {'units_name': 'm', 'factor': 1000},
-    'g m-3': {'units_name': 'kg m-3', 'factor': 0.001},
-    'kg m-3': {'units_name': 'g m-3', 'factor': 1000},
+    "cm/s": {"units_name": "m/s", "factor": 0.01},
+    "cm s-1": {"units_name": "m s-1", "factor": 0.01},
+    "m/s": {"units_name": "cm/s", "factor": 100},
+    "m s-1": {"units_name": "cm s-1", "factor": 100},
+    "S/m": {"units_name": "mS/cm", "factor": 0.1},
+    "S m-1": {"units_name": "mS cm-1", "factor": 0.1},
+    "mS/cm": {"units_name": "S/m", "factor": 10},
+    "mS cm-1": {"units_name": "S m-1", "factor": 10},
+    "dbar": {"units_name": "Pa", "factor": 10000},
+    "Pa": {"units_name": "dbar", "factor": 0.0001},
+    "dbar": {"units_name": "kPa", "factor": 10},
+    "degrees_Celsius": {"units_name": "Celsius", "factor": 1},
+    "Celsius": {"units_name": "degrees_Celsius", "factor": 1},
+    "m": {"units_name": "cm", "factor": 100},
+    "m": {"units_name": "km", "factor": 0.001},
+    "cm": {"units_name": "m", "factor": 0.01},
+    "km": {"units_name": "m", "factor": 1000},
+    "g m-3": {"units_name": "kg m-3", "factor": 0.001},
+    "kg m-3": {"units_name": "g m-3", "factor": 1000},
 }
 
 # Specify the preferred units, and it will convert if the conversion is available in unit_conversion
-preferred_units = ['m s-1', 'dbar', 'S m-1']
+preferred_units = ["m s-1", "dbar", "S m-1"]
 
 # String formats for units.  The key is the original, the value is the desired format
 unit_str_format = {
-    'm/s': 'm s-1',
-    'cm/s': 'cm s-1',
-    'S/m': 'S m-1',
-    'meters': 'm',
-    'degrees_Celsius': 'Celsius',
-    'g/m^3': 'g m-3',
+    "m/s": "m s-1",
+    "cm/s": "cm s-1",
+    "S/m": "S m-1",
+    "meters": "m",
+    "degrees_Celsius": "Celsius",
+    "g/m^3": "g m-3",
 }
 
 
@@ -59,18 +56,24 @@ def calc_Z(ds):
     xarray.Dataset: The dataset with an additional 'DEPTH' variable.
     """
     # Ensure the required variables are present
-    if 'PRES' not in ds.variables or 'LATITUDE' not in ds.variables or 'LONGITUDE' not in ds.variables:
-        raise ValueError("Dataset must contain 'PRES', 'LATITUDE', and 'LONGITUDE' variables.")
+    if (
+        "PRES" not in ds.variables
+        or "LATITUDE" not in ds.variables
+        or "LONGITUDE" not in ds.variables
+    ):
+        raise ValueError(
+            "Dataset must contain 'PRES', 'LATITUDE', and 'LONGITUDE' variables."
+        )
 
     # Initialize the new variable with the same dimensions as dive_num
-    ds['DEPTH_Z'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
+    ds["DEPTH_Z"] = (["N_MEASUREMENTS"], np.full(ds.dims["N_MEASUREMENTS"], np.nan))
 
     # Calculate depth using gsw
-    depth = gsw.z_from_p(ds['PRES'], ds['LATITUDE'])
-    ds['DEPTH_Z'] = depth
+    depth = gsw.z_from_p(ds["PRES"], ds["LATITUDE"])
+    ds["DEPTH_Z"] = depth
 
     # Assign the calculated depth to a new variable in the dataset
-    ds['DEPTH_Z'].attrs = {
+    ds["DEPTH_Z"].attrs = {
         "units": "meters",
         "positive": "up",
         "standard_name": "depth",
@@ -78,6 +81,7 @@ def calc_Z(ds):
     }
 
     return ds
+
 
 def split_by_unique_dims(ds):
     """
@@ -108,7 +112,6 @@ def split_by_unique_dims(ds):
     return {dims: dataset for dims, dataset in unique_dims_datasets.items()}
 
 
-
 def reformat_units_var(ds, var_name, unit_format=unit_str_format):
     """
     Renames units in the dataset based on the provided dictionary for OG1.
@@ -122,14 +125,17 @@ def reformat_units_var(ds, var_name, unit_format=unit_str_format):
     -------
     xarray.Dataset: The dataset with renamed units.
     """
-    old_unit = ds[var_name].attrs['units']
+    old_unit = ds[var_name].attrs["units"]
     if old_unit in unit_format:
         new_unit = unit_format[old_unit]
     else:
         new_unit = old_unit
     return new_unit
 
-def convert_units_var(var_values, current_unit, new_unit, unit_conversion=unit_conversion):
+
+def convert_units_var(
+    var_values, current_unit, new_unit, unit_conversion=unit_conversion
+):
     """
     Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
 
@@ -146,14 +152,18 @@ def convert_units_var(var_values, current_unit, new_unit, unit_conversion=unit_c
     -------
     xarray.Dataset: The dataset with converted units.
     """
-    if current_unit in unit_conversion and new_unit in unit_conversion[current_unit]['units_name']:
-        conversion_factor = unit_conversion[current_unit]['factor']
+    if (
+        current_unit in unit_conversion
+        and new_unit in unit_conversion[current_unit]["units_name"]
+    ):
+        conversion_factor = unit_conversion[current_unit]["factor"]
         new_values = var_values * conversion_factor
     else:
         new_values = var_values
         print(f"No conversion information found for {current_unit} to {new_unit}")
-#        raise ValueError(f"No conversion information found for {current_unit} to {new_unit}")
+    #        raise ValueError(f"No conversion information found for {current_unit} to {new_unit}")
     return new_values
+
 
 def convert_qc_flags(dsa, qc_name):
     # Must be called *after* var_name has OG1 long_name
@@ -162,15 +172,18 @@ def convert_qc_flags(dsa, qc_name):
         # Seaglider default type was a string.  Convert to int8.
         dsa[qc_name].values = dsa[qc_name].values.astype("int8")
         # Seaglider default flag_meanings were prefixed with 'QC_'. Remove this prefix.
-        if 'flag_meaning' in dsa[qc_name].attrs:
-            flag_meaning = dsa[qc_name].attrs['flag_meaning']
-            dsa[qc_name].attrs['flag_meaning'] = flag_meaning.replace('QC_', '')
+        if "flag_meaning" in dsa[qc_name].attrs:
+            flag_meaning = dsa[qc_name].attrs["flag_meaning"]
+            dsa[qc_name].attrs["flag_meaning"] = flag_meaning.replace("QC_", "")
         # Add a long_name attribute to the QC variable
-        dsa[qc_name].attrs['long_name'] = dsa[var_name].attrs.get('long_name', '') + ' quality flag'
-        dsa[qc_name].attrs['standard_name'] = 'status_flag'
+        dsa[qc_name].attrs["long_name"] = (
+            dsa[var_name].attrs.get("long_name", "") + " quality flag"
+        )
+        dsa[qc_name].attrs["standard_name"] = "status_flag"
         # Mention the QC variable in the variable attributes
-        dsa[var_name].attrs['ancillary_variables'] = qc_name
+        dsa[var_name].attrs["ancillary_variables"] = qc_name
     return dsa
+
 
 def find_best_dtype(var_name, da):
     input_dtype = da.dtype.type
@@ -189,9 +202,11 @@ def find_best_dtype(var_name, da):
         return np.float32
     return input_dtype
 
+
 def set_fill_value(new_dtype):
-    fill_val = 2 ** (int(re.findall("\d+", str(new_dtype))[0]) - 1) - 1
+    fill_val = 2 ** (int(re.findall(r"\d+", str(new_dtype))[0]) - 1) - 1
     return fill_val
+
 
 def set_best_dtype(ds):
     bytes_in = ds.nbytes
@@ -217,5 +232,3 @@ def set_best_dtype(ds):
         f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
     )
     return ds
-
-
