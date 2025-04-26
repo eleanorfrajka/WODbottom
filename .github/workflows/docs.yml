@@ -1,7 +1,6 @@
-name: Test documentation build
+name: Build Documentation
 
 on:
-  # This will run when a pull request is merged
   pull_request:
     paths:
       - '**.py'
@@ -12,44 +11,52 @@ on:
 jobs:
   build-docs:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    defaults:
+      run:
+        shell: bash
 
     steps:
-    - name: Run a one-line script
-      run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
-    - uses: actions/checkout@v4
-
-    - name: checkout
+    - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-  
-    # Using channel conda-forge helps deal with pandoc installation issues
-    - name: Setup Micromamba ${{ matrix.python-version }}
-      uses: mamba-org/setup-micromamba@v2.0.1
+
+    - name: Set up Micromamba
+      uses: mamba-org/setup-micromamba@v2
       with:
-        environment-name: TEST
-        init-shell: bash
+        environment-name: DOCS
         create-args: >-
-          python=3 pip
+          python=3.11 pip
           --file requirements-dev.txt
           --channel conda-forge
+        init-shell: bash
 
-    - name: Install template_project
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install package
+      run: |
+        pip install -e .
+
+    - name: Show Python version
+      run: |
+        echo "Using Python:" && which python && python --version
+
+    # Execute the demo notebook to generate output.
+    # --ExecutePreprocessor.allow_errors=True means the notebook will continue even if a cell fails.
+    # Recommended for early development; you can set allow_errors=False later when production-ready.
+    - name: Build and Deploy Docs
       shell: bash -l {0}
       run: |
-        python -m pip install -e . --no-deps --force-reinstall
-
-    # Assumes that the notebook to be documented is located within notebooks/ and is called demo.ipynb
-    # In the example below, we've included the `--ExecutePreprocessor.allow_errors=True` flag to allow the notebook to build even if there are errors
-    # For production runs (and when your code is cleaner), you can remove this flag or set it to False.
-    - name: Build documentation
-      shell: bash -l {0}
-      run: |
-        set -e
+        eval "$(micromamba shell hook --shell=bash)"
+        micromamba activate DOCS
         jupyter nbconvert --to notebook --execute notebooks/demo.ipynb --output=demo-output.ipynb --ExecutePreprocessor.allow_errors=True
         mv notebooks/*output.ipynb docs/source/
         pushd docs
-        make clean html 
+        make clean html
         popd
