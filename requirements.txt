@@ -11,9 +11,10 @@ netcdf4>=1.6
 
 # --- Oceanographic tools ---
 gsw>=3.6.16
-# cmocean>=2.0       # optional: confirm usage for ocean color maps
-# cartopy>=0.22      # optional: confirm usage for maps
+cmocean>=2.0       # optional: confirm usage for ocean color maps
+cartopy>=0.22      # optional: confirm usage for maps
 # argopy
+bathyreq
 
 # --- Plotting ---
 matplotlib>=3.7
